@@ -1,8 +1,0 @@
-
-cmake_minimum_required(VERSION 3.12)
-project(sprite_config_generator)
-add_executable(sprite_config_generator src/main.c)
-
-# find_package(libimago REQUIRED)
-
-# target_link_libraries(sprite_config_generator libimago)
