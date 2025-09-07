@@ -82,20 +82,26 @@ json GCI_Indexed(img_pixmap *map) {
 
 int main(int argc, char *argv[]) {
   struct img_pixmap img;
+
   img_init(&img);
   img_load(&img, "foo.png");
-
   json imageJson = GCI_Indexed(&img);
+  img_destroy(&img);
+
+  img_init(&img);
+  img_load(&img, "orion.png");
+  json orionJson = GCI_Indexed(&img);
+  img_destroy(&img);
 
   json config;
   config["script"] = "sprite/src/main.luau";
   config["customData"];
   config["customData"]["images"] = {};
   config["customData"]["images"].push_back(imageJson);
+  config["customData"]["images"].push_back(orionJson);
 
   std::ofstream out("frogrilla.sprite.json");
   out << std::setw(4) << config << std::endl;
 
-  img_destroy(&img);
   return 1;
 }
