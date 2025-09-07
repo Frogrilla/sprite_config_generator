@@ -26,10 +26,9 @@ json GCI_Indexed(img_pixmap *map) {
   int length = 0;
   int index = -1;
 
-  auto AddSegment = [&]() {
+  auto AddSegment = [&](int size, int col) {
     if (length > 0) {
-      data.append(std::to_string(length) + ";" + std::to_string(index + 1) +
-                  ";");
+      data.append(std::to_string(size) + ";" + std::to_string(col + 1) + ";");
       length = 0;
       index = -1;
     }
@@ -37,32 +36,26 @@ json GCI_Indexed(img_pixmap *map) {
 
   auto ContinueSegment = [&]() { length++; };
 
-  auto ContinueOrAddSegment = [&](int nextIndex) {
-    if (nextIndex == index || length <= 0) {
-      ContinueSegment();
-      index = nextIndex;
-    } else {
-      AddSegment();
-    }
-  };
-
   for (int y = 0; y < map->height; y++) {
     for (int x = 0; x < map->width; x++) {
       Color col;
       img_getpixel4f(map, x, y, &col.r, &col.g, &col.b, &col.a);
 
-      auto find = std::find(pallete.begin(), pallete.end(), col);
+      int find =
+          std::find(pallete.begin(), pallete.end(), col) - pallete.begin();
 
-      if (find != pallete.end()) {
-        ContinueOrAddSegment(find - pallete.begin());
+      if (find == index) {
+        length++;
       } else {
-        AddSegment();
+        if (find == pallete.size()) {
+          pallete.push_back(col);
+        }
+        AddSegment(length, index);
+        index = find;
         length = 1;
-        index = pallete.size();
-        pallete.push_back(col);
       }
     }
-    AddSegment();
+    AddSegment(length, index);
   }
 
   json imageJson;
