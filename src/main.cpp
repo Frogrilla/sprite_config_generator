@@ -1,9 +1,14 @@
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 #include <imago2.h>
+#include <iostream>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <string>
+#include <vector>
+
+namespace fs = std::filesystem;
 
 using json = nlohmann::json;
 
@@ -12,6 +17,11 @@ struct Color {
   float g = 0.0f;
   float b = 0.0f;
   float a = 0.0f;
+};
+
+struct Point {
+  int x = 0;
+  int y = 0;
 };
 
 bool operator==(const Color &a, const Color &b) {
@@ -80,28 +90,86 @@ json GCI_Indexed(img_pixmap *map) {
   return imageJson;
 }
 
+json GCI_Layered(img_pixmap *img) {
+  std::vector<Color> pallete;
+  std::vector<std::vector<bool>> mask(img->height,
+                                      std::vector<bool>(img->width, false));
+
+  json imageJson;
+
+  imageJson["id"] = img->name;
+  imageJson["format"] = "indexed";
+  imageJson["width"] = img->width;
+  imageJson["height"] = img->height;
+  imageJson["pallete"] = {};
+
+  for (int i = 0; i < pallete.size(); i++) {
+    json col;
+    col["r"] = pallete[i].r;
+    col["g"] = pallete[i].g;
+    col["b"] = pallete[i].b;
+    col["a"] = pallete[i].a;
+    imageJson["pallete"].push_back(col);
+  }
+
+  return imageJson;
+}
+
 int main(int argc, char *argv[]) {
+
+  if (argc <= 1) {
+    std::cout << "No images supplied | Aborting" << std::endl;
+    return -1;
+  }
+
+  std::vector<json> images;
+
   struct img_pixmap img;
+  for (int i = 1; i < argc; i++) {
+    fs::path path = argv[i];
+    if (fs::is_directory(path)) {
+      for (const auto &file : fs::recursive_directory_iterator(path)) {
+        img_init(&img);
+        img_load(&img, file.path().c_str());
 
-  img_init(&img);
-  img_load(&img, "foo.png");
-  json imageJson = GCI_Indexed(&img);
-  img_destroy(&img);
+        if (img.width > 0 && img.height > 0) {
+          images.push_back(GCI_Indexed(&img));
+          std::cout << "Encoded " << img.name << " using format 'Indexed'"
+                    << std::endl;
+        }
 
-  img_init(&img);
-  img_load(&img, "orion.png");
-  json orionJson = GCI_Indexed(&img);
-  img_destroy(&img);
+        img_destroy(&img);
+      }
+    } else {
+      img_init(&img);
+      img_load(&img, path.c_str());
+
+      if (img.width > 0 && img.height > 0) {
+        images.push_back(GCI_Indexed(&img));
+        std::cout << "Encoded " << img.name << " using format 'Indexed'"
+                  << std::endl;
+      }
+      img_destroy(&img);
+    }
+  }
+
+  std::cout << "Done encoding " << std::to_string(images.size()) << " image(s)"
+            << std::endl;
 
   json config;
   config["script"] = "sprite/src/main.luau";
   config["customData"];
   config["customData"]["images"] = {};
-  config["customData"]["images"].push_back(imageJson);
-  config["customData"]["images"].push_back(orionJson);
+  for (const json &imageJson : images) {
+    config["customData"]["images"].push_back(imageJson);
+  }
+
+  std::cout << "Writing to file" << std::endl;
 
   std::ofstream out("frogrilla.sprite.json");
   out << std::setw(4) << config << std::endl;
+
+  std::cout << "Images written to `./frogrilla.sprite.json`" << std::endl;
 
   return 1;
 }
