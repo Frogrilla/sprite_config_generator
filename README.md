@@ -9,8 +9,9 @@ This project uses:
 ## Usage:
 
 To use SCG simply open a terminal and run `sprite_config_generator` then type the directories with or the path to your images. E.G.
+
 ```shell
-./sprite_config_generator ./images ./other-images/some-image.png
+./sprite_config_generator.exe ./images ./other-images/some-image.png
 ```
 </br>
 
