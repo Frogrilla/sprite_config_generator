@@ -4,7 +4,6 @@
 #include <imago2.h>
 #include <iostream>
 #include <nlohmann/json.hpp>
-#include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <vector>
 
