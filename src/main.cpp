@@ -1,9 +1,9 @@
+#include "imago2.h"
+#include "nlohmann/json.hpp"
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
-#include <imago2.h>
 #include <iostream>
-#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
 
