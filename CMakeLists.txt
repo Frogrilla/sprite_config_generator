@@ -10,6 +10,6 @@ add_executable(sprite_config_generator src/main.cpp)
 
 target_include_directories(sprite_config_generator PRIVATE lib/extern)
 
-find_library(libimago NAMES libimago REQUIRED)
+find_library(libimago STATIC NAMES libimago REQUIRED)
 
 target_link_libraries(sprite_config_generator ${libimago})
