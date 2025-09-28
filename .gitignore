@@ -2,3 +2,4 @@ build/
 images/
 frogrilla.sprite.json
 .cache/
+.vscode/

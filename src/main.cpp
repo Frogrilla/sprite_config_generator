@@ -14,10 +14,10 @@ namespace fs = std::filesystem;
 using json = nlohmann::json;
 
 struct Color {
-  uint8_t r = 0.0f;
-  uint8_t g = 0.0f;
-  uint8_t b = 0.0f;
-  uint8_t a = 0.0f;
+  uint8_t r = 0;
+  uint8_t g = 0;
+  uint8_t b = 0;
+  uint8_t a = 0;
 };
 
 bool operator==(const Color &a, const Color &b) {
@@ -57,7 +57,7 @@ json GCI_Indexed(const char *path) {
 
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
-      Color col = *(Color *)&(img[((y * width) + x) * channels]);
+      Color col = *(Color *)(img + (((y * width) + x) * channels));
       if (channels < 4) {
         col.a = 255;
       }
