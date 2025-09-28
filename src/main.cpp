@@ -1,5 +1,7 @@
-#include "imago2.h"
-#include "nlohmann/json.hpp"
+#include <cstdint>
+#define STB_IMAGE_IMPLEMENTATION
+#include "json.hpp"
+#include "stb_image.h"
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -12,22 +14,27 @@ namespace fs = std::filesystem;
 using json = nlohmann::json;
 
 struct Color {
-  float r = 0.0f;
-  float g = 0.0f;
-  float b = 0.0f;
-  float a = 0.0f;
-};
-
-struct Point {
-  int x = 0;
-  int y = 0;
+  uint8_t r = 0.0f;
+  uint8_t g = 0.0f;
+  uint8_t b = 0.0f;
+  uint8_t a = 0.0f;
 };
 
 bool operator==(const Color &a, const Color &b) {
   return a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a;
 };
 
-json GCI_Indexed(img_pixmap *map) {
+json GCI_Indexed(const char *path) {
+
+  int width, height, channels;
+  unsigned char *img = stbi_load(path, &width, &height, &channels, 0);
+
+  if (img == NULL) {
+    delete (img);
+    return NULL;
+  }
+
+  std::cout << "Encoding image using 'Indexed' " << path;
 
   std::vector<Color> pallete;
   std::string data = "";
@@ -45,10 +52,12 @@ json GCI_Indexed(img_pixmap *map) {
 
   auto ContinueSegment = [&]() { length++; };
 
-  for (int y = 0; y < map->height; y++) {
-    for (int x = 0; x < map->width; x++) {
-      Color col;
-      img_getpixel4f(map, x, y, &col.r, &col.g, &col.b, &col.a);
+  for (int y = 0; y < height; y++) {
+    for (int x = 0; x < width; x++) {
+      Color col = *(Color *)&(img[((y * width) + x) * channels]);
+      if (channels < 4) {
+        col.a = 255;
+      }
 
       int find =
           std::find(pallete.begin(), pallete.end(), col) - pallete.begin();
@@ -67,12 +76,14 @@ json GCI_Indexed(img_pixmap *map) {
     AddSegment(length, index);
   }
 
+  delete (img);
+
   json imageJson;
 
-  imageJson["id"] = map->name;
+  imageJson["id"] = path;
   imageJson["format"] = "indexed";
-  imageJson["width"] = map->width;
-  imageJson["height"] = map->height;
+  imageJson["width"] = width;
+  imageJson["height"] = height;
   imageJson["pallete"] = {};
 
   for (int i = 0; i < pallete.size(); i++) {
@@ -86,31 +97,7 @@ json GCI_Indexed(img_pixmap *map) {
 
   imageJson["data"] = data;
 
-  return imageJson;
-}
-
-json GCI_Layered(img_pixmap *img) {
-  std::vector<Color> pallete;
-  std::vector<std::vector<bool>> mask(img->height,
-                                      std::vector<bool>(img->width, false));
-
-  json imageJson;
-
-  imageJson["id"] = img->name;
-  imageJson["format"] = "indexed";
-  imageJson["width"] = img->width;
-  imageJson["height"] = img->height;
-  imageJson["pallete"] = {};
-
-  for (int i = 0; i < pallete.size(); i++) {
-    json col;
-    col["r"] = pallete[i].r;
-    col["g"] = pallete[i].g;
-    col["b"] = pallete[i].b;
-    col["a"] = pallete[i].a;
-    imageJson["pallete"].push_back(col);
-  }
-
+  std::cout << " -> done" << std::endl;
   return imageJson;
 }
 
@@ -123,32 +110,18 @@ int main(int argc, char *argv[]) {
 
   std::vector<json> images;
 
-  struct img_pixmap img;
   for (int i = 1; i < argc; i++) {
     fs::path path = argv[i];
     if (fs::is_directory(path)) {
       for (const auto &file : fs::recursive_directory_iterator(path)) {
-        img_init(&img);
-        img_load(&img, file.path().c_str());
-
-        if (img.width > 0 && img.height > 0) {
-          images.push_back(GCI_Indexed(&img));
-          std::cout << "Encoded " << img.name << " using format 'Indexed'"
-                    << std::endl;
-        }
-
-        img_destroy(&img);
+        json img = GCI_Indexed(file.path().c_str());
+        if (img != NULL)
+          images.push_back(img);
       }
     } else {
-      img_init(&img);
-      img_load(&img, path.c_str());
-
-      if (img.width > 0 && img.height > 0) {
-        images.push_back(GCI_Indexed(&img));
-        std::cout << "Encoded " << img.name << " using format 'Indexed'"
-                  << std::endl;
-      }
-      img_destroy(&img);
+      json img = GCI_Indexed(path.c_str());
+      if (img != NULL)
+        images.push_back(img);
     }
   }
 
