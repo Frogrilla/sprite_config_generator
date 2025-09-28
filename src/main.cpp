@@ -26,15 +26,18 @@ bool operator==(const Color &a, const Color &b) {
 
 json GCI_Indexed(const char *path) {
 
+  std::cout << path;
+
   int width, height, channels;
   unsigned char *img = stbi_load(path, &width, &height, &channels, 0);
 
   if (img == NULL) {
     delete (img);
+    std::cout << " X" << std::endl;
     return NULL;
   }
 
-  std::cout << "Encoding image using 'Indexed' " << path;
+  std::cout << " -> encoding with format 'Indexed'";
 
   std::vector<Color> pallete;
   std::string data = "";
@@ -114,12 +117,12 @@ int main(int argc, char *argv[]) {
     fs::path path = argv[i];
     if (fs::is_directory(path)) {
       for (const auto &file : fs::recursive_directory_iterator(path)) {
-        json img = GCI_Indexed(file.path().c_str());
+        json img = GCI_Indexed(file.path().string().c_str());
         if (img != NULL)
           images.push_back(img);
       }
     } else {
-      json img = GCI_Indexed(path.c_str());
+      json img = GCI_Indexed(path.string().c_str());
       if (img != NULL)
         images.push_back(img);
     }
