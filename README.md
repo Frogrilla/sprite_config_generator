@@ -10,7 +10,7 @@ This project uses:
 To use SCG simply open a terminal and run `sprite_config_generator` then type the directories with or the paths to your images. E.G.
 
 ```shell
-./sprite_config_generator.exe ./images ./other-images/some-image.png
+.\sprite_config_generator.exe .\images .\other-images\some-image.png
 ```
 
 The output config will be written to `frogrilla.sprite.json` in the directory the program is run from, so if you want it to be in your config folder automatically, run it from there.
